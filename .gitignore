@@ -9,7 +9,7 @@ playwright/.cache/
 playwright/.auth/
 
 # traces, screenshots, videos (also covered by test-results/)
-*.zip
+
 *.webm
 screenshots/
 traces/

@@ -1,7 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 import { BasePage } from './BasePage';
-import type { Product } from '../data/products';
-import { parseMoney } from '../utils/money';
+import type { Product } from '@data/products';
+import { parseMoney } from '@utils/money';
 
 /** Option values of the product sort <select>. */
 export type SortOption = 'az' | 'za' | 'lohi' | 'hilo';
@@ -14,7 +14,6 @@ export class InventoryPage extends BasePage {
   readonly productItems: Locator;
   readonly productNames: Locator;
   readonly productPrices: Locator;
-  readonly productImages: Locator;
   readonly sortSelect: Locator;
 
   constructor(page: Page) {
@@ -24,7 +23,6 @@ export class InventoryPage extends BasePage {
     this.productItems = page.getByTestId('inventory-item');
     this.productNames = page.getByTestId('inventory-item-name');
     this.productPrices = page.getByTestId('inventory-item-price');
-    this.productImages = this.productItems.getByRole('img');
     this.sortSelect = page.getByTestId('product-sort-container');
   }
 

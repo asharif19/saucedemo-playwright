@@ -10,7 +10,7 @@ Submitted for the LAUIH QA Automation Engineer technical assignment.
 
 ## Prerequisites
 
-- Node.js 18 or newer (developed on Node 24, Playwright 1.64)
+- Node.js 20 or newer (Playwright 1.64 requires it; developed on Node 24)
 - npm (ships with Node)
 - Internet access to `https://www.saucedemo.com`
 
@@ -49,25 +49,32 @@ On PowerShell set environment variables with `$env:CROSS_BROWSER = "1"` before r
 
 ### Expected result
 
-Playwright reports `15 passed`. Two of those are **expected failures** (shown with an `x` in the list
-reporter and under "Expected" in the HTML report). They live in `tests/exploratory/` and
-assert the correct behaviour against `problem_user`, where known defects exist (see `BUG_REPORT.md`).
-They are marked with `test.fail()` so the run stays green while the defects remain tracked in code. If a
-defect is fixed, Playwright flags the test as an unexpected pass, which is the cue to remove the marker.
+Playwright reports `15 passed`. Thirteen are the core scenarios A1 to A6. The other two live in
+`tests/exploratory/` and are **defect reproductions** for `problem_user`: each asserts the buggy
+behaviour documented in `BUG_REPORT.md` and passes while the defect exists. If one of them fails, either
+the defect was fixed (promote the test to the core suite) or the reproduction broke, and both deserve a
+human look.
+
+### Continuous integration
+
+`.github/workflows/ci.yml` runs typecheck, lint and the Chromium suite on every push and pull request,
+and uploads `playwright-report/` as an artifact. `playwright.config.ts` raises retries to 2 and caps
+workers at 2 when `CI` is set.
 
 ## Project structure
 
 ```
 .
+├── .github/workflows/ci.yml    GitHub Actions: typecheck, lint, test, upload report
 ├── playwright.config.ts        baseURL, timeouts, reporters, trace/screenshot policy, projects
-├── tsconfig.json               strict TypeScript + path aliases (@pages, @fixtures, @data, @utils)
-├── eslint.config.mjs           lint rules (no-explicit-any is an error)
+├── tsconfig.json               strict TypeScript + path aliases (@pages, @components, @fixtures, @data, @utils)
+├── eslint.config.mjs           type-aware lint: no-explicit-any and no-floating-promises are errors
 ├── src/
 │   ├── pages/                  page objects: LoginPage, InventoryPage, CartPage, CheckoutPage, BasePage
 │   ├── components/             HeaderComponent (cart link/badge, burger menu, logout)
 │   ├── fixtures/test.ts        custom `test` with page-object fixtures and `authenticatedPage`
 │   ├── data/                   users, products, checkout customer, tax rate
-│   └── utils/money.ts          parseMoney, roundMoney, sum, isSortedAscending
+│   └── utils/money.ts          parseMoney, roundMoney, sum, sortAscending, sortDescending
 └── tests/
     ├── auth/login.spec.ts          A1, A2
     ├── inventory/sorting.spec.ts   A3
@@ -105,9 +112,11 @@ and compared with `toBeCloseTo`. The overview is also checked for internal consi
 (`itemTotal + tax == total`) so the assertion does not rest on the tax assumption alone.
 
 **Synchronisation.** Only web-first assertions (`expect(locator).toHaveText/.toHaveValue/.toBeHidden`)
-are used. After a sort, the test waits for the first price to equal the known minimum before reading
-the whole list, which proves the re-render happened without any sleep. There is no
-`page.waitForTimeout` anywhere in the suite.
+are used. Non-retrying reads such as `locator.all()` or `allTextContents()` are always preceded by a
+retrying assertion on the same elements (for example `toHaveCount`), so the read never races the
+render. After a sort, the test waits for the first price to equal the known minimum before reading the
+whole list. There is no `page.waitForTimeout` anywhere in the suite, and ESLint's
+`no-floating-promises` rule makes a forgotten `await` a lint error.
 
 **Failure evidence.** `trace: 'retain-on-failure'`, `screenshot: 'only-on-failure'`, one local retry
 (two on CI), and an HTML reporter in `playwright-report/`. Video is off to keep runs fast.
@@ -117,8 +126,13 @@ declared `as const satisfies Record<string, Product>` so it is both literal-type
 There is no `any` in the codebase and ESLint enforces that.
 
 **Exploratory defects live in code.** `tests/exploratory/problem-user.spec.ts` encodes the two defects
-from `BUG_REPORT.md` as tests that assert the correct behaviour and are marked `test.fail()`. The
-suite stays green, the defects remain executable documentation, and a fix is detected automatically.
+from `BUG_REPORT.md` as reproduction tests that assert the observed buggy behaviour. I chose this over
+`test.fail()` deliberately: an expected-failure marker would also swallow unrelated failures such as a
+login timeout, whereas a reproduction test goes red for exactly two reasons, the bug was fixed or the
+reproduction broke. Each test carries an `issue` annotation pointing at the report.
+
+**Long flows use `test.step`.** Checkout and logout are split into named steps so the HTML report and
+trace viewer show where a failure happened without reading the code.
 
 ## Assumptions
 
@@ -135,5 +149,8 @@ suite stays green, the defects remain executable documentation, and a fix is det
 - Firefox and WebKit are opt-in (`CROSS_BROWSER=1`) and were smoke-checked, not fully validated.
 - `problem_user` has more anomalies than the two reported (for example broken product images and
   inert add-to-cart buttons on some items). They are noted in `BUG_REPORT.md` but only the two most
-  impactful were turned into tests, in line with the "one reproducible defect" scope of A7.
+  impactful were turned into reproduction tests, in line with the "one reproducible defect" scope of A7.
+- The reproduction tests pass while the bugs exist, which is intentional but means a casual glance at
+  the report does not reveal open defects. The `@exploratory` tag and `issue` annotations make them
+  easy to spot and filter.
 - No visual regression or accessibility checks are included; both would be natural next steps.

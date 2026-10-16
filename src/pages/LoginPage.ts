@@ -1,5 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
-import type { Credentials } from '../data/users';
+import type { Credentials } from '@data/users';
 
 export class LoginPage {
   static readonly path = '/';

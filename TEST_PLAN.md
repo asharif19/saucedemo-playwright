@@ -29,7 +29,7 @@ Users: `standard_user` for A1 to A6, `locked_out_user` for A2, `problem_user` fo
 | A6 | Logout | Logout ends the session | Shared-device exposure | Back on `/`, login form empty, cart link gone, `session-username` cookie absent, deep link refused | `session/session.spec.ts` › logging out returns to the login page and blocks access to authenticated pages | Automated, passing |
 | A6 | Isolation (dirty test) | A test that leaves cart items must not affect others | Order-dependent flakiness | Test ends with 2 items in cart and no cleanup | `session/session.spec.ts` › a test that leaves items in the cart does not affect other tests | Automated, passing |
 | A6 | Isolation (clean start) | Each test starts with a predictable state | Hidden coupling between tests | Badge hidden, sort is `az`, names alphabetical, all buttons read "Add to cart", `localStorage` cart empty | `session/session.spec.ts` › every test starts with a fresh session, empty cart and default sort order | Automated, passing |
-| A7 | Exploratory (`problem_user`) | Explore checkout and sorting with the problem account | Defects reach customers | Documented in `BUG_REPORT.md`: BUG-001 checkout blocked, BUG-002 sort inert | `exploratory/problem-user.spec.ts` › BUG-001, BUG-002 | Automated as `test.fail()` (expected failures), defects reported |
+| A7 | Exploratory (`problem_user`) | Explore checkout and sorting with the problem account | Defects reach customers | Documented in `BUG_REPORT.md`: BUG-001 checkout blocked, BUG-002 sort inert | `exploratory/problem-user.spec.ts` › BUG-001 reproduction, BUG-002 reproduction | Automated as defect reproductions (pass while the bug exists), defects reported |
 
 ## Isolation strategy
 
@@ -42,7 +42,9 @@ Running `npx playwright test --repeat-each 3` exercises the same guarantee repea
 ## Evidence on failure
 
 HTML report (`playwright-report/`), trace (`retain-on-failure`) and screenshot (`only-on-failure`) are
-configured in `playwright.config.ts`. One retry locally, two on CI.
+configured in `playwright.config.ts`. One retry locally, two on CI. Multi-screen flows (A5, A6) are
+broken into `test.step` blocks so the report pinpoints the failing step. The GitHub Actions workflow
+uploads the report as an artifact on every run.
 
 ## Out of scope
 

@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { HeaderComponent } from '../components/HeaderComponent';
+import { HeaderComponent } from '@components/HeaderComponent';
 
 /** Shared chrome for every authenticated page. */
 export abstract class BasePage {

@@ -11,15 +11,15 @@ for input-handling defects. While getting there I also exercised **product sorti
 **add to cart**, since the cart is a prerequisite for checkout.
 
 Both defects below are reproduced automatically in `tests/exploratory/problem-user.spec.ts`
-(`npm run test:exploratory`). Those tests assert the correct behaviour and are marked `test.fail()`,
-so they show as expected failures today and will flag an unexpected pass once fixed.
+(`npm run test:exploratory`). Those tests assert the observed buggy behaviour and pass while the defect
+exists; a failure means the defect was fixed or the reproduction no longer holds.
 
 ---
 
 ## BUG-001: Last name typed at checkout is written into the First Name field, blocking checkout
 
 **Severity:** High (purchase cannot be completed)  **Priority:** P1
-**Reproducibility:** 100% (5/5 manual attempts, plus automated)
+**Reproducibility:** 100% (manual, and automated on every suite run)
 
 ### Steps to reproduce
 

@@ -1,7 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 import { BasePage } from './BasePage';
-import type { CheckoutCustomer } from '../data/checkout';
-import { parseMoney } from '../utils/money';
+import type { CheckoutCustomer } from '@data/checkout';
+import { parseMoney } from '@utils/money';
 
 export interface OrderSummary {
   readonly itemTotal: number;
@@ -36,7 +36,6 @@ export class CheckoutPage extends BasePage {
   // Completion
   readonly completeHeader: Locator;
   readonly completeText: Locator;
-  readonly backHomeButton: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -54,7 +53,6 @@ export class CheckoutPage extends BasePage {
 
     this.completeHeader = page.getByTestId('complete-header');
     this.completeText = page.getByTestId('complete-text');
-    this.backHomeButton = page.getByRole('button', { name: 'Back Home' });
   }
 
   async fillCustomerInformation(customer: CheckoutCustomer): Promise<void> {

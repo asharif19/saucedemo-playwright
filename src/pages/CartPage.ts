@@ -1,6 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 import { BasePage } from './BasePage';
-import { parseMoney } from '../utils/money';
+import { parseMoney } from '@utils/money';
 
 export interface CartLine {
   readonly name: string;
@@ -14,21 +14,18 @@ export class CartPage extends BasePage {
   readonly title: Locator;
   readonly cartItems: Locator;
   readonly checkoutButton: Locator;
-  readonly continueShoppingButton: Locator;
 
   constructor(page: Page) {
     super(page);
     this.title = page.getByTestId('title');
     this.cartItems = page.getByTestId('inventory-item');
     this.checkoutButton = page.getByRole('button', { name: 'Checkout' });
-    this.continueShoppingButton = page.getByRole('button', { name: 'Continue Shopping' });
   }
 
-  async goto(): Promise<void> {
-    await this.page.goto(CartPage.path);
-  }
-
-  /** Reads every cart line as structured data so tests compare values, not formatted strings. */
+  /**
+   * Reads every cart line as structured data so tests compare values, not formatted strings.
+   * `locator.all()` does not wait, so callers assert `cartItems` has the expected count first.
+   */
   async getLines(): Promise<CartLine[]> {
     const rows = await this.cartItems.all();
     return Promise.all(

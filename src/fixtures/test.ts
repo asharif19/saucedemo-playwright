@@ -1,9 +1,9 @@
 import { test as base, expect } from '@playwright/test';
-import { LoginPage } from '../pages/LoginPage';
-import { InventoryPage } from '../pages/InventoryPage';
-import { CartPage } from '../pages/CartPage';
-import { CheckoutPage } from '../pages/CheckoutPage';
-import { users, type Credentials } from '../data/users';
+import { LoginPage } from '@pages/LoginPage';
+import { InventoryPage } from '@pages/InventoryPage';
+import { CartPage } from '@pages/CartPage';
+import { CheckoutPage } from '@pages/CheckoutPage';
+import { users, type Credentials } from '@data/users';
 
 interface PageFixtures {
   loginPage: LoginPage;

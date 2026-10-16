@@ -6,46 +6,56 @@ import { roundMoney, sum } from '@utils/money';
 
 test.describe('Checkout', () => {
   // A5
-  test('completing checkout shows a correct item total, tax and final total, then confirms the order @smoke', async ({
-    authenticatedPage: inventoryPage,
-    cartPage,
-    checkoutPage,
-    page,
-  }) => {
-    const selection = [products.backpack, products.boltTShirt, products.onesie];
-    for (const product of selection) {
-      await inventoryPage.addToCart(product);
-    }
-    await expect(inventoryPage.header.cartBadge).toHaveText(String(selection.length));
+  test(
+    'completing checkout shows a correct item total, tax and final total, then confirms the order',
+    { tag: '@smoke' },
+    async ({ authenticatedPage: inventoryPage, cartPage, checkoutPage, page }) => {
+      const selection = [products.backpack, products.boltTShirt, products.onesie];
 
-    await inventoryPage.header.openCart();
-    // Use what the cart actually shows as the source of truth for the expected totals.
-    const cartLines = await cartPage.getLines();
-    expect(cartLines).toHaveLength(selection.length);
-    const expectedItemTotal = sum(cartLines.map((line) => line.price * line.quantity));
-    const expectedTax = roundMoney(expectedItemTotal * TAX_RATE);
-    const expectedTotal = roundMoney(expectedItemTotal + expectedTax);
+      const expected = await test.step('build the cart and derive expected totals from it', async () => {
+        for (const product of selection) {
+          await inventoryPage.addToCart(product);
+        }
+        await expect(inventoryPage.header.cartBadge).toHaveText(String(selection.length));
 
-    await cartPage.checkout();
-    await expect(page).toHaveURL(CheckoutPage.stepOnePath);
-    await checkoutPage.fillCustomerInformation(checkoutCustomer);
-    await checkoutPage.continueToOverview();
+        await inventoryPage.header.openCart();
+        await expect(cartPage.cartItems).toHaveCount(selection.length);
+        // What the cart actually shows is the source of truth for the expected totals.
+        const cartLines = await cartPage.getLines();
+        const itemTotal = sum(cartLines.map((line) => line.price * line.quantity));
+        const tax = roundMoney(itemTotal * TAX_RATE);
+        return { itemTotal, tax, total: roundMoney(itemTotal + tax) };
+      });
 
-    await expect(page).toHaveURL(CheckoutPage.stepTwoPath);
-    await expect(checkoutPage.summaryItems).toHaveCount(selection.length);
-    const summary = await checkoutPage.getOrderSummary();
-    expect(summary.itemTotal).toBeCloseTo(expectedItemTotal, 2);
-    expect(summary.tax).toBeCloseTo(expectedTax, 2);
-    expect(summary.total).toBeCloseTo(expectedTotal, 2);
-    // Internal consistency of what the user sees, independent of our tax assumption.
-    expect(roundMoney(summary.itemTotal + summary.tax)).toBeCloseTo(summary.total, 2);
+      await test.step('enter customer information', async () => {
+        await cartPage.checkout();
+        await expect(page).toHaveURL(CheckoutPage.stepOnePath);
+        await checkoutPage.fillCustomerInformation(checkoutCustomer);
+        await checkoutPage.continueToOverview();
+      });
 
-    await checkoutPage.finish();
-    await expect(page).toHaveURL(CheckoutPage.completePath);
-    await expect(checkoutPage.completeHeader).toHaveText('Thank you for your order!');
-    await expect(checkoutPage.completeText).toContainText('Your order has been dispatched');
-    await expect(checkoutPage.header.cartBadge).toBeHidden();
-  });
+      await test.step('overview totals match the cart contents', async () => {
+        await expect(page).toHaveURL(CheckoutPage.stepTwoPath);
+        await expect(checkoutPage.summaryItems).toHaveCount(selection.length);
+        await expect(checkoutPage.totalLabel).toBeVisible();
+
+        const summary = await checkoutPage.getOrderSummary();
+        expect(summary.itemTotal).toBeCloseTo(expected.itemTotal, 2);
+        expect(summary.tax).toBeCloseTo(expected.tax, 2);
+        expect(summary.total).toBeCloseTo(expected.total, 2);
+        // Internal consistency of what the user sees, independent of our tax-rate assumption.
+        expect(roundMoney(summary.itemTotal + summary.tax)).toBeCloseTo(summary.total, 2);
+      });
+
+      await test.step('finishing shows the confirmation and empties the cart', async () => {
+        await checkoutPage.finish();
+        await expect(page).toHaveURL(CheckoutPage.completePath);
+        await expect(checkoutPage.completeHeader).toHaveText('Thank you for your order!');
+        await expect(checkoutPage.completeText).toContainText('Your order has been dispatched');
+        await expect(checkoutPage.header.cartBadge).toBeHidden();
+      });
+    },
+  );
 
   test('checkout information step rejects submission when the first name is missing', async ({
     authenticatedPage: inventoryPage,
