@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+
+# playwright generated output
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+playwright/.auth/
+
+# traces, screenshots, videos (also covered by test-results/)
+*.zip
+*.webm
+screenshots/
+traces/
+
+# local environment
+.env
+.env.*
+!.env.example
+
+# editor / os
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
